@@ -1,0 +1,136 @@
+
+// -----------------------------
+// Prisma schema for snack_db
+// Based on your ERD schema
+// -----------------------------
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// === TABLES ===
+
+model Client {
+  client_ID     Int       @id @default(autoincrement())
+  nom           String
+  created_at    DateTime  @default(now())
+  produits      Produit[]
+  categories    Categorie[]
+  commandes     Commande[]
+  utilisateurs  User[]
+}
+
+model User {
+  user_ID    Int     @id @default(autoincrement())
+  email      String  @unique
+  password   String
+  client_ID  Int
+  client     Client  @relation(fields: [client_ID], references: [client_ID])
+}
+
+model Categorie {
+  categorie_ID Int      @id @default(autoincrement())
+  nom          String
+  client_ID    Int
+  client       Client   @relation(fields: [client_ID], references: [client_ID])
+  produits     Produit[]
+}
+
+model Produit {
+  produit_ID           Int               @id @default(autoincrement())
+  nom                  String
+  description          String?
+  prix                 Int
+  type                 String
+  prix_menu_supplement Int
+  categorie_ID         Int
+  client_ID            Int
+  
+  stock                Int               @default(0)
+
+  image                String?    
+
+  categorie            Categorie         @relation(fields: [categorie_ID], references: [categorie_ID])
+  client               Client            @relation(fields: [client_ID], references: [client_ID])
+  options              Option_Produit[]
+  ingredients          Ingredient_Produit[]
+  compositions         Composition[]
+  commandes_produit    Commande_Produit[]
+}
+
+model Option_Produit {
+  option_ID   Int       @id @default(autoincrement())
+  nom         String
+  produit_ID  Int
+  produit     Produit   @relation(fields: [produit_ID], references: [produit_ID])
+  commandes   Produit_Commande_Option[]
+}
+
+model Produit_Commande_Option {
+  id               Int              @id @default(autoincrement())
+  commandeProduit  Commande_Produit @relation(fields: [commandeProduit_ID], references: [commandeProduit_ID])
+  commandeProduit_ID Int
+  option           Option_Produit   @relation(fields: [option_ID], references: [option_ID])
+  option_ID        Int
+  ajout            Boolean
+}
+
+model Ingredient {
+  ingredient_ID Int      @id @default(autoincrement())
+  nom           String
+  produits      Ingredient_Produit[]
+}
+
+model Ingredient_Produit {
+  id            Int        @id @default(autoincrement())
+  produit_ID    Int
+  produit       Produit    @relation(fields: [produit_ID], references: [produit_ID])
+  ingredient_ID Int
+  ingredient    Ingredient @relation(fields: [ingredient_ID], references: [ingredient_ID])
+}
+
+model Menu {
+  menu_ID         Int              @id @default(autoincrement())
+  nom             String
+  prix            Int
+  compositions    Menu_Composition[]
+}
+
+model Menu_Composition {
+  id         Int       @id @default(autoincrement())
+  menu_ID    Int
+  menu       Menu      @relation(fields: [menu_ID], references: [menu_ID])
+  nom        String
+  compositions Composition[]
+}
+
+model Composition {
+  id                  Int      @id @default(autoincrement())
+  menuComposition_ID  Int
+  menuComposition     Menu_Composition @relation(fields: [menuComposition_ID], references: [id])
+  produit_ID          Int
+  produit             Produit  @relation(fields: [produit_ID], references: [produit_ID])
+  supplement          Int
+}
+
+model Commande {
+  commande_ID Int      @id @default(autoincrement())
+  client_ID   Int
+  client      Client   @relation(fields: [client_ID], references: [client_ID])
+  produits    Commande_Produit[]
+  created_at  DateTime @default(now())
+}
+
+model Commande_Produit {
+  commandeProduit_ID Int      @id @default(autoincrement())
+  commande_ID        Int
+  commande           Commande @relation(fields: [commande_ID], references: [commande_ID])
+  produit_ID         Int
+  produit            Produit  @relation(fields: [produit_ID], references: [produit_ID])
+  options            Produit_Commande_Option[]
+}
